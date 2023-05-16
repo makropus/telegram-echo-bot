@@ -1,0 +1,58 @@
+name: golang-pipeline
+
+on:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Unit Tests
+        run: go test ./...
+      
+  golangci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.20'
+      - uses: actions/checkout@v3
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          # Optional: version of golangci-lint to use in form of v1.2 or v1.2.3 or `latest` to use the latest version
+          version: latest
+          # Optional: golangci-lint command line arguments.
+          args: --verbose
+
+  deploy-to-yc:
+    runs-on: ubuntu-latest
+    needs: [tests, golangci]
+    steps:
+        - uses: actions/checkout@v3           
+        - name: move-to-project-root
+          run:  mv cmd/telegram-echo-bot/main.go main.go                
+        - name: Deploy Function
+          id: sls-func
+          uses: yc-actions/yc-sls-function@v2
+          with:
+              yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+              folder-id: ${{ secrets.YC_FOLDER_ID }}
+              function-name: "telegram-echo-bot"
+              runtime: "golang119"
+              memory: "128Mb"
+              execution-timeout: 5
+              service-account: ${{ secrets.YC_FUNC_ROLE }}
+              entrypoint: "main.YandexCFHandler"
+              environment: |
+                BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+                DB_STR=${{ secrets.DB_STR }}
+              exclude: |
+                  .github/**/*
+                  .git/**/*
+                  .git
+                  .github
+                  ./cmd/
+      
