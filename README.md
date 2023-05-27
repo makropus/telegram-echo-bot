@@ -1,17 +1,22 @@
-# telegram-echo-bot
+## Telegram Echo Bot
+Link to actual bot: [@JustAnotherEchoBot](https://t.me/yc_go_function_echo_bot)  
+Main guide used:   [How to create a Telegram bot](https://cloud.yandex.com/en/docs/functions/tutorials/telegram-bot-serverless)
 
-API-шлюз -> Cпецификация  
-```
-paths:
-  /telegram-echo-bot:
-    post:
-      x-yc-apigateway-integration:
-        type: cloud_functions
-        function_id: <cloud-function-id>
-      operationId: <cloud-function-name>
-```
+### Components needed:
+- Telegram:
+  - Bot token from [@BotFather](https://t.me/BotFather)
+  - Setup WebHook
+- Yandex Cloud:
+  - API-Gateway
+  - Cloud Function
+  - Managed YBD (or any other)
 
-Настройка WebHook 
+### Notes:
+#### Yandex Cloud roles:
+- `serverless.functions.admin` for GitHub Actions to deploy  cloud functions 
+- `serverless.functions.invoker`, `ydb.editor` for executing function, read/write to YDB
+
+#### Setup Telegram WebHook:
 ```
 curl `
     --request POST `
@@ -20,5 +25,5 @@ curl `
     --data '"{ \"url\": \"<url-for-webhook>" }"' `
     --ssl-no-revoke 
 ```
-(bot-token) = токен для бота от https://t.me/BotFather  
-(url-for-webhook) = (API-шлюз -> Служебный домен) + (cloud-function-name)  
+`<bot-token>` = bot token [@BotFather](https://t.me/BotFather)  
+`<url-for-webhook>` = (API-Gateway -> Default domain ) + (API-Gateway -> Default domain -> Specification -> `paths`)  
